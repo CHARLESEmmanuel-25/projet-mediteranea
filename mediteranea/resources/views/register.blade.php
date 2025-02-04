@@ -80,35 +80,52 @@
     </style>
 </head>
 <body>
-    <h1>Formulaire d'inscription client</h1>
+<h1>Formulaire d'inscription client</h1>
 
-    @if(session()->has('success'))
-        <div class="message success">
-            {{ session()->get('success') }}
-        </div>
-    @endif
+@if(session()->has('success'))
+    <div class="message success">
+        {{ session('success') }}
+    </div>
+@endif
 
-    @if(session()->has('error'))
-        <div class="message error">
-            {{ session()->get('error') }}
-        </div>
-    @endif
+@if(session()->has('error'))
+    <div class="message error">
+        {{ session('error') }}
+    </div>
+@endif
 
-    <form action="{{ route('store.register') }}" method="POST">
-        @csrf
-        <label for="fullname">Fullname :</label>
-        <input type="text" id="fullname" name="fullname" placeholder="Votre nom complet" required>
+<form action="{{ route('store.register') }}" method="POST">
+    @csrf
 
-        <label for="email">Adresse e-mail :</label>
-        <input type="email" id="email" name="email" placeholder="Votre e-mail" required>
+    <label for="fullname">Fullname :</label>
+    <input type="text" id="fullname" name="fullname" placeholder="Votre nom complet" value="{{ old('fullname') }}" required>
+    @error('fullname')
+        <div class="error">{{ $message }}</div>
+    @enderror
 
-        <label for="phone">Numéro de téléphone :</label>
-        <input type="tel" id="phone" name="phone" placeholder="Votre téléphone" required>
+    <label for="email">Adresse e-mail :</label>
+    <input type="email" id="email" name="email" placeholder="Votre e-mail" value="{{ old('email') }}" required>
+    @error('email')
+        <div class="error">{{ $message }}</div>
+    @enderror
 
-        <label for="password">Mot de passe :</label>
-        <input type="password" id="password" name="password" placeholder="Votre mot de passe" required>
+    <label for="phone">Numéro de téléphone :</label>
+    <input type="tel" id="phone" name="phone" placeholder="Votre téléphone" value="{{ old('phone') }}" required>
+    @error('phone')
+        <div class="error">{{ $message }}</div>
+    @enderror
 
-        <input type="submit" value="S'inscrire">
-    </form>
+    <label for="password">Mot de passe :</label>
+    <input type="password" id="password" name="password" placeholder="Votre mot de passe" required>
+    @error('password')
+        <div class="error">{{ $message }}</div>
+    @enderror
+
+    <label for="password_confirmation">Confirmer le mot de passe :</label>
+    <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirmez votre mot de passe" required>
+
+    <input type="submit" value="S'inscrire">
+</form>
+
 </body>
 </html>

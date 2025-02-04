@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -19,15 +21,20 @@ class AuthController extends Controller
     /**
      * Gère l'inscription d'un utilisateur.
      */
+
+
     public function storeRegister(Request $request)
     {
-        // La validation des données est assurée en front, mais il est préférable de la refaire en back-end pour éviter toute faille
+        Log::info('Début du storeRegister', ['data' => $request->all()]);
+
         $request->validate([
-            'fullname' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
-            'password' => 'required|string|min:6',
+            'fullname' => 'required',
+            'email' => 'required',
+            'phone' => 'required',
+            'password' => 'required',
         ]);
+
+        Log::info('Validation réussie');
 
         // Création de l'utilisateur
         $user = new User();
@@ -37,12 +44,16 @@ class AuthController extends Controller
         $user->password = Hash::make($request->password);
 
         if ($user->save()) {
-            // Gestion des notifications pour informer de la réussite de l'inscription
-            return redirect()->route('show.login')->with('success', 'Inscription réussie !');
+            Log::info('Utilisateur créé avec succès', ['user_id' => $user->id]);
+            session()->flash('success', 'Inscription réussie !');
+            return redirect()->route('show.login');
         }
 
-        return redirect()->route('show.registration')->with('error', 'Erreur lors de la création du compte.');
+        Log::error('Erreur lors de la création de l’utilisateur');
+
+        return redirect()->back()->withInput()->with('error', 'Erreur lors de la création du compte.');
     }
+
 
     /**
      * Affiche la page de connexion.
@@ -55,8 +66,27 @@ class AuthController extends Controller
     /**
      * Gère la connexion d'un utilisateur.
      */
-    public function storeLogin(Request $request)
+    public function login(Request $request)
     {
-        // Implémentation à ajouter
+        $credentials = $request->only('email', 'password');
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            // Authentification réussie, rediriger vers la page d'accueil ou tableau de bord
+            return redirect()->route('home')->with('success', 'Connexion réussie !');
+        }
+
+        // Authentification échouée, rediriger avec un message d'erreur
+        return redirect()->back()->withInput()->with('error', 'Identifiants invalides.');
+    }
+
+    public function invoke(Request $request)
+    {
+        Auth::logout(); // Déconnecte l'utilisateur
+
+        $request->session()->invalidate(); // Invalide la session
+        $request->session()->regenerateToken(); // Régénère le token CSRF
+
+        return redirect()->route('show.login')->with('success', 'Votre session a bien été fermé');
     }
 }

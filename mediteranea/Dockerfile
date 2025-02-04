@@ -1,13 +1,7 @@
-# Apache and PHP 8.3 Dockerfile
-# Maintainer: <Your Name>
-
-# Pull base image
+# Utilisation de PHP 8.3 avec Apache
 FROM php:8.3-apache
 
-
-
-# Install system dependencies
-
+# Installer les dépendances
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -21,17 +15,15 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     zip \
     unzip \
-    default-mysql-client
+    default-mysql-client && \
+    rm -rf /var/lib/apt/lists/*
 
-
-
-# Install PHP extensions
-
+# Installer les extensions PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip curl intl
 
-# Expose port 80
+# Exposer le port 80
 EXPOSE 80
 
-# Start Apache
+# Démarrer Apache
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
