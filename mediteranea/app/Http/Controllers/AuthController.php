@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SignUp;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -31,7 +32,7 @@ class AuthController extends Controller
 
          $request->validate([
              'fullname' => 'required|string',
-             'email' => 'required|email',
+             'email' => 'required|email|unique:users,email',
              'phone' => 'required|string',
              'password' => 'required|string',
          ]);
@@ -39,35 +40,61 @@ class AuthController extends Controller
          Log::info('Validation réussie');
 
          try {
-             // Création d'un utilisateur temporaire
-             $user = new User();
-             $user->name = $request->fullname;
-             $user->email = $request->email;
-             $user->phone = $request->phone;
-             $user->password = Hash::make($request->password);
+             // Générer un token unique
+             $token = Str::random(32);
 
-             
+             // Stocker les informations en session (pas encore en base)
+             session([
+                 'user' => [
+                     'name' => $request->fullname,
+                     'email' => $request->email,
+                     'phone' => $request->phone,
+                     'password' => Hash::make($request->password),
+                 ],
+                 'confirmation_token' => $token,
+             ]);
 
-             // Envoi du mail de confirmation
-             Mail::to($user->email)->send(new SignUp());
+             // Lien de confirmation
+             $confirmationLink = route('confirm.register', ['token' => $token]);
 
-             Log::info('Mail envoyé avec succès à ' . $user->email);
+             // Envoi du mail avec le lien
+             Mail::to($request->email)->send(new SignUp($request, $confirmationLink));
 
-             // Sauvegarde de l'utilisateur
-             if ($user->save()) {
-                 Log::info('Utilisateur créé avec succès', ['user_id' => $user->id]);
-                 session()->flash('success', 'Inscription réussie ! Veuillez vérifier votre email pour confirmer votre inscription.');
-                 return redirect()->route('show.login');
-             }
+             Log::info('Mail envoyé avec succès à ' . $request->email);
 
-             Log::error('Erreur lors de la sauvegarde de l’utilisateur');
+             return redirect()->route('show.login')->with('success', 'Un email de confirmation vous a été envoyé.');
          } catch (\Exception $e) {
-             Log::error('Exception attrapée : ' . $e->getMessage());
-             return redirect()->back()->withInput()->with('error', $e);
+             Log::error('Erreur lors de l’envoi du mail : ' . $e->getMessage());
+             return redirect()->back()->withInput()->with('error', 'Erreur lors de l’envoi de l’email.');
+         }
+     }
+
+
+
+     public function confirmRegister($token)
+     {
+         // Vérifier si le token correspond
+         if (session('confirmation_token') !== $token) {
+             return redirect()->route('show.login')->with('error', 'Lien invalide ou expiré.');
          }
 
-         return redirect()->back()->withInput()->with('error', 'Erreur lors de la création du compte.');
+         // Récupérer les données utilisateur stockées en session
+         $userData = session('user');
+
+         if (!$userData) {
+             return redirect()->route('show.login')->with('error', 'Session expirée. Veuillez recommencer.');
+         }
+
+         // Enregistrer l'utilisateur en base
+         $user = User::create($userData);
+
+         // Supprimer les données de session
+         session()->forget(['user', 'confirmation_token']);
+
+         return redirect()->route('show.login')->with('success', 'Votre inscription est confirmée. Vous pouvez vous connecter.');
      }
+
+
 
 
 

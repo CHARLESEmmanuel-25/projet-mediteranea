@@ -14,12 +14,19 @@ class SignUp extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $confirmationLink;
+    public $fullname;
+
     /**
      * Create a new message instance.
+     *
+     * @param string $fullname
+     * @param string $confirmationLink
      */
-    public function __construct()
+    public function __construct($fullname, $confirmationLink)
     {
-        //
+        $this->fullname = $fullname;
+        $this->confirmationLink = $confirmationLink;
     }
 
     /**
@@ -29,7 +36,7 @@ class SignUp extends Mailable
     {
         return new Envelope(
             from: new Address('no-reply@cityzen.com', 'Mediteranea team'),
-            subject: 'Confirmation',
+            subject: 'Confirmation d’inscription',
         );
     }
 
@@ -39,7 +46,7 @@ class SignUp extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'signupMail',
+            view: 'signupMail' 
         );
     }
 
