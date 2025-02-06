@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SignUp;
 
 class AuthController extends Controller
 {
@@ -23,36 +25,50 @@ class AuthController extends Controller
      */
 
 
-    public function storeRegister(Request $request)
-    {
-        Log::info('Début du storeRegister', ['data' => $request->all()]);
+     public function storeRegister(Request $request)
+     {
+         Log::info('Début du storeRegister', ['data' => $request->all()]);
 
-        $request->validate([
-            'fullname' => 'required',
-            'email' => 'required',
-            'phone' => 'required',
-            'password' => 'required',
-        ]);
+         $request->validate([
+             'fullname' => 'required|string',
+             'email' => 'required|email',
+             'phone' => 'required|string',
+             'password' => 'required|string',
+         ]);
 
-        Log::info('Validation réussie');
+         Log::info('Validation réussie');
 
-        // Création de l'utilisateur
-        $user = new User();
-        $user->name = $request->fullname;
-        $user->email = $request->email;
-        $user->phone = $request->phone;
-        $user->password = Hash::make($request->password);
+         try {
+             // Création d'un utilisateur temporaire
+             $user = new User();
+             $user->name = $request->fullname;
+             $user->email = $request->email;
+             $user->phone = $request->phone;
+             $user->password = Hash::make($request->password);
 
-        if ($user->save()) {
-            Log::info('Utilisateur créé avec succès', ['user_id' => $user->id]);
-            session()->flash('success', 'Inscription réussie !');
-            return redirect()->route('show.login');
-        }
+             
 
-        Log::error('Erreur lors de la création de l’utilisateur');
+             // Envoi du mail de confirmation
+             Mail::to($user->email)->send(new SignUp());
 
-        return redirect()->back()->withInput()->with('error', 'Erreur lors de la création du compte.');
-    }
+             Log::info('Mail envoyé avec succès à ' . $user->email);
+
+             // Sauvegarde de l'utilisateur
+             if ($user->save()) {
+                 Log::info('Utilisateur créé avec succès', ['user_id' => $user->id]);
+                 session()->flash('success', 'Inscription réussie ! Veuillez vérifier votre email pour confirmer votre inscription.');
+                 return redirect()->route('show.login');
+             }
+
+             Log::error('Erreur lors de la sauvegarde de l’utilisateur');
+         } catch (\Exception $e) {
+             Log::error('Exception attrapée : ' . $e->getMessage());
+             return redirect()->back()->withInput()->with('error', $e);
+         }
+
+         return redirect()->back()->withInput()->with('error', 'Erreur lors de la création du compte.');
+     }
+
 
 
     /**

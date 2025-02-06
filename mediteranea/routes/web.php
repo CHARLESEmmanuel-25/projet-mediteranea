@@ -1,9 +1,15 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\MailController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-Route::get('/', function () {
+
+Route::get('/', function(){
+    return('hello');
+});
+Route::get('/home', function () {
     return view('welcome');
 })->middleware('auth')->name('home');
 
@@ -19,6 +25,17 @@ Route::get('/logout', [AuthController::class, 'invoke'])
 
 Route::post('/forgot-password', [AuthController::class, 'storeLinkForgotPassword']);
 Route::post('/forgot-password/{token}', [AuthController::class, 'resetForgotPassword']);
+
+
+//google auth
+
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+
+
+//sending Mail
+Route::get('/confirm/{token}', [AuthController::class, 'confirmRegister'])->name('confirm.register');
 
 
 

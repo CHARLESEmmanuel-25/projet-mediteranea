@@ -132,7 +132,7 @@
     </form>
 
     <div class="google-login">
-        <a href="{{ url('YOUR_GOOGLE_LOGIN_URL') }}">Se connecter avec Google</a>
+        <a href="{{ route('auth.google.redirect') }}">Se connecter avec Google</a>
     </div>
 </body>
 </html>
